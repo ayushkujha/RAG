@@ -14,22 +14,92 @@ st.set_page_config(
 # Custom Premium Styling
 st.markdown("""
 <style>
-    /* Custom style injection for a modern minimalist look */
-    .stApp {
-        background-color: #ffffff;
-        color: #1f2937;
+    /* Force Light Theme CSS Variables at all levels */
+    :root, .stApp, [data-testid="stAppViewContainer"], [data-testid="stSidebar"], [data-testid="stForm"], [data-testid="stExpander"] {
+        --background-color: #ffffff !important;
+        --secondary-background-color: #f9fafb !important;
+        --text-color: #1f2937 !important;
+        --primary-color: #4f46e5 !important;
+        
+        --st-background-color: #ffffff !important;
+        --st-secondary-background-color: #f9fafb !important;
+        --st-text-color: #1f2937 !important;
+        --st-primary-color: #4f46e5 !important;
     }
     
-    /* Sidebar styling */
+    /* Base app background */
+    .stApp {
+        background-color: #ffffff !important;
+        color: #1f2937 !important;
+    }
+    
+    /* Sidebar background and border */
     [data-testid="stSidebar"] {
         background-color: #f9fafb !important;
         border-right: 1px solid #e5e7eb !important;
     }
     
-    /* Sidebar text inputs */
-    [data-testid="stSidebar"] .stTextInput input {
-        border-radius: 6px !important;
+    /* Ensure all sidebar text elements are dark gray */
+    [data-testid="stSidebar"] p, 
+    [data-testid="stSidebar"] span, 
+    [data-testid="stSidebar"] label, 
+    [data-testid="stSidebar"] h1, 
+    [data-testid="stSidebar"] h2, 
+    [data-testid="stSidebar"] h3, 
+    [data-testid="stSidebar"] h4, 
+    [data-testid="stSidebar"] h5, 
+    [data-testid="stSidebar"] h6, 
+    [data-testid="stSidebar"] small {
+        color: #1f2937 !important;
+    }
+    
+    /* Force inputs to be white background with dark text */
+    input[type="text"], input[type="password"], textarea {
+        background-color: #ffffff !important;
+        color: #1f2937 !important;
         border: 1px solid #d1d5db !important;
+        border-radius: 6px !important;
+    }
+    
+    /* Focus styles for inputs */
+    input[type="text"]:focus, input[type="password"]:focus, textarea:focus {
+        border-color: #4f46e5 !important;
+        box-shadow: 0 0 0 1px #4f46e5 !important;
+    }
+    
+    /* Form container styles */
+    [data-testid="stForm"] {
+        background-color: #ffffff !important;
+        border: none !important;
+        padding: 0px !important;
+    }
+    
+    /* Expander styling */
+    [data-testid="stExpander"] {
+        background-color: #ffffff !important;
+        border: 1px solid #e5e7eb !important;
+        border-radius: 8px !important;
+    }
+    .streamlit-expanderHeader {
+        background-color: #ffffff !important;
+        color: #1f2937 !important;
+        border-bottom: none !important;
+    }
+    .streamlit-expanderContent {
+        background-color: #ffffff !important;
+        color: #1f2937 !important;
+    }
+    
+    /* BaseWeb Slider styling to make tracks visible and labels dark */
+    div[data-baseweb="slider"] {
+        background-color: transparent !important;
+    }
+    div[data-baseweb="slider"] * {
+        color: #1f2937 !important;
+    }
+    /* Slider track background bar */
+    div[data-baseweb="slider"] [role="presentation"] {
+        background-color: #e5e7eb !important;
     }
     
     /* Premium Minimalist Card styling */
@@ -49,11 +119,11 @@ st.markdown("""
     .metric-value {
         font-size: 26px;
         font-weight: 700;
-        color: #111827;
+        color: #111827 !important;
     }
     .metric-label {
         font-size: 13px;
-        color: #6b7280;
+        color: #6b7280 !important;
         font-weight: 500;
         text-transform: uppercase;
         letter-spacing: 0.05em;

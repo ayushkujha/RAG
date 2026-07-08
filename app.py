@@ -175,11 +175,14 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Initialize Session States
+if "provider" not in st.session_state:
+    st.session_state.provider = "Gemini"
+
 if "api_key" not in st.session_state:
     st.session_state.api_key = os.environ.get("GEMINI_API_KEY", "")
 
 if "rag_engine" not in st.session_state:
-    st.session_state.rag_engine = RAGEngine(api_key=st.session_state.api_key)
+    st.session_state.rag_engine = RAGEngine(provider=st.session_state.provider, api_key=st.session_state.api_key)
 
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
@@ -208,6 +211,15 @@ if "min_similarity" not in st.session_state:
 if "hybrid_alpha" not in st.session_state:
     st.session_state.hybrid_alpha = 0.7
 
+if "use_parent_child" not in st.session_state:
+    st.session_state.use_parent_child = False
+
+if "enhancement" not in st.session_state:
+    st.session_state.enhancement = "None"
+
+if "rerank" not in st.session_state:
+    st.session_state.rerank = False
+
 # Trigger regeneration of suggested questions
 def reset_suggestions():
     st.session_state.suggested_questions = []
@@ -231,19 +243,29 @@ with st.sidebar:
     
     st.divider()
     
-    # API Credentials Setup
-    api_key_input = st.text_input(
-        "Gemini API Key",
-        value=st.session_state.api_key,
-        type="password",
-        help="Input your Google Gemini API Key here. If empty, the app will attempt to load it from the environmental GEMINI_API_KEY."
+    # Model Provider Selection
+    provider_input = st.selectbox(
+        "Model Provider",
+        options=["Gemini", "OpenAI"],
+        index=0 if st.session_state.provider == "Gemini" else 1,
+        help="Select the AI provider to use for embeddings and generation."
     )
     
-    if api_key_input != st.session_state.api_key:
+    # Generic API Key input
+    api_key_input = st.text_input(
+        "API Key",
+        value=st.session_state.api_key,
+        type="password",
+        help=f"Input your {provider_input} API Key. If empty, the app will attempt to load it from environment variables."
+    )
+    
+    if (provider_input != st.session_state.provider) or (api_key_input != st.session_state.api_key):
+        st.session_state.provider = provider_input
         st.session_state.api_key = api_key_input
-        st.session_state.rag_engine.set_api_key(api_key_input)
+        st.session_state.rag_engine.set_api_key(api_key_input, provider_input)
         reset_suggestions()
-        st.success("API key updated successfully!")
+        st.success(f"Provider configurations updated!")
+        st.rerun()
 
     st.divider()
 
@@ -267,6 +289,11 @@ with st.sidebar:
                 value=st.session_state.chunk_overlap, 
                 step=10,
                 help="Overlapping characters between chunks to preserve context boundaries."
+            )
+            use_parent_child_val = st.checkbox(
+                "Use Parent-Child Chunking",
+                value=st.session_state.use_parent_child,
+                help="Embed smaller chunks for precise search, but send larger parent chunks to the LLM."
             )
             
             st.divider()
@@ -299,12 +326,28 @@ with st.sidebar:
                 help="1.0 = Pure Semantic/Vector Search. 0.0 = Pure Exact Keyword Match. 0.7 = Blended (Recommended)."
             )
             
+            enhancement_val = st.selectbox(
+                "Retrieval Enhancement",
+                options=["None", "Query Expansion", "HyDE"],
+                index=["None", "Query Expansion", "HyDE"].index(st.session_state.enhancement),
+                help="Use LLM to expand query or generate hypothetical answer before search."
+            )
+            
+            rerank_val = st.checkbox(
+                "Enable LLM Reranking",
+                value=st.session_state.rerank,
+                help="Use the LLM to rerank retrieved chunks before answering."
+            )
+            
             if st.form_submit_button("Save & Apply Settings", use_container_width=True):
                 st.session_state.chunk_size = chunk_size_val
                 st.session_state.chunk_overlap = chunk_overlap_val
                 st.session_state.top_k = top_k_val
                 st.session_state.min_similarity = min_similarity_val
                 st.session_state.hybrid_alpha = hybrid_alpha_val
+                st.session_state.use_parent_child = use_parent_child_val
+                st.session_state.enhancement = enhancement_val
+                st.session_state.rerank = rerank_val
                 st.toast("Settings updated successfully!", icon="⚙️")
 
     st.divider()
@@ -343,7 +386,7 @@ st.markdown("Upload documents and converse with an AI companion that leverages y
 cols = st.columns(3)
 total_docs = len(st.session_state.uploaded_files_list)
 total_chunks = len(st.session_state.rag_engine.documents)
-api_status_val = "🟢 Connected" if st.session_state.api_key or os.environ.get("GEMINI_API_KEY") else "🔴 Disconnected"
+api_status_val = "🟢 Connected" if st.session_state.api_key or os.environ.get("GEMINI_API_KEY" if st.session_state.provider == "Gemini" else "OPENAI_API_KEY") else "🔴 Disconnected"
 
 with cols[0]:
     st.markdown(f"""
@@ -363,7 +406,7 @@ with cols[2]:
     st.markdown(f"""
     <div class="metric-card">
         <div class="metric-value">{api_status_val}</div>
-        <div class="metric-label">Gemini API Status</div>
+        <div class="metric-label">{st.session_state.provider} API Status</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -373,8 +416,8 @@ st.write("")
 with st.expander("📁 Document Ingestion Panel", expanded=(total_docs == 0)):
     st.markdown("### Upload new documents to vector store")
     uploaded_files = st.file_uploader(
-        "Select PDF, TXT or Markdown files",
-        type=["pdf", "txt", "md"],
+        "Select PDF, DOCX, CSV, XLSX, TXT or Markdown files",
+        type=["pdf", "docx", "csv", "xlsx", "txt", "md"],
         accept_multiple_files=True
     )
     
@@ -392,7 +435,8 @@ with st.expander("📁 Document Ingestion Panel", expanded=(total_docs == 0)):
                             file_name=uploaded_file.name,
                             file_path=tmp_path,
                             chunk_size=st.session_state.chunk_size,
-                            chunk_overlap=st.session_state.chunk_overlap
+                            chunk_overlap=st.session_state.chunk_overlap,
+                            use_parent_child=st.session_state.use_parent_child
                         )
                         newly_added += 1
                         st.info(f"Parsed '{uploaded_file.name}' into {num_chunks} chunks.")
@@ -481,8 +525,9 @@ if "active_prompt" in st.session_state and st.session_state.active_prompt:
     st.session_state.active_prompt = None  # consume the prompt
 
 if prompt:
-    if not st.session_state.api_key and not os.environ.get("GEMINI_API_KEY"):
-        st.error("Please enter a Gemini API Key in the sidebar configuration to begin chatting.")
+    active_env_key = "GEMINI_API_KEY" if st.session_state.provider == "Gemini" else "OPENAI_API_KEY"
+    if not st.session_state.api_key and not os.environ.get(active_env_key):
+        st.error(f"Please enter a valid {st.session_state.provider} API Key in the sidebar configuration to begin chatting.")
     else:
         with st.chat_message("user"):
             st.markdown(prompt)
@@ -498,7 +543,9 @@ if prompt:
                         chat_history=st.session_state.chat_history[:-1],
                         top_k=st.session_state.top_k,
                         min_similarity=st.session_state.min_similarity,
-                        hybrid_alpha=st.session_state.hybrid_alpha
+                        hybrid_alpha=st.session_state.hybrid_alpha,
+                        enhancement=st.session_state.enhancement,
+                        rerank=st.session_state.rerank
                     )
                     message_placeholder.markdown(response)
                     

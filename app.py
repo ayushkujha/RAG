@@ -14,50 +14,92 @@ st.set_page_config(
 # Custom Premium Styling
 st.markdown("""
 <style>
-    /* Custom style injection for a modern look */
+    /* Custom style injection for a modern minimalist look */
     .stApp {
-        background: linear-gradient(135deg, #0e1117 0%, #161a24 100%);
+        background-color: #ffffff;
+        color: #1f2937;
     }
+    
+    /* Sidebar styling */
+    [data-testid="stSidebar"] {
+        background-color: #f9fafb !important;
+        border-right: 1px solid #e5e7eb !important;
+    }
+    
+    /* Sidebar text inputs */
+    [data-testid="stSidebar"] .stTextInput input {
+        border-radius: 6px !important;
+        border: 1px solid #d1d5db !important;
+    }
+    
+    /* Premium Minimalist Card styling */
     .metric-card {
-        background-color: #1e2530;
-        border-radius: 10px;
-        padding: 15px;
-        border: 1px solid #2e3748;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        background-color: #ffffff;
+        border-radius: 8px;
+        padding: 16px;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
         text-align: center;
+        transition: all 0.2s ease;
+    }
+    .metric-card:hover {
+        border-color: #cbd5e1;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
     }
     .metric-value {
-        font-size: 24px;
-        font-weight: bold;
-        color: #4f8bf9;
+        font-size: 26px;
+        font-weight: 700;
+        color: #111827;
     }
     .metric-label {
-        font-size: 14px;
-        color: #8f9cae;
+        font-size: 13px;
+        color: #6b7280;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-top: 4px;
     }
-    /* Smooth transition for buttons */
+    
+    /* Standard Button styling */
     div.stButton > button {
-        border-radius: 8px !important;
-        transition: all 0.3s ease;
+        border-radius: 6px !important;
+        border: 1px solid #d1d5db !important;
+        background-color: #ffffff !important;
+        color: #374151 !important;
+        font-weight: 500 !important;
+        padding: 6px 16px !important;
+        transition: all 0.2s ease !important;
     }
     div.stButton > button:hover {
-        box-shadow: 0 0 10px rgba(79, 139, 249, 0.3);
-        transform: translateY(-1px);
+        background-color: #f9fafb !important;
+        border-color: #cbd5e1 !important;
+        color: #111827 !important;
     }
-    /* Style suggested questions buttons */
+    
+    /* Style suggested questions buttons as outline badge pills */
     .suggestion-btn button {
-        background-color: #1e2530 !important;
-        border: 1px solid #4f8bf9 !important;
-        color: #4f8bf9 !important;
+        background-color: #ffffff !important;
+        border: 1px solid #e5e7eb !important;
+        color: #4b5563 !important;
         text-align: left !important;
-        padding: 8px 12px !important;
-        font-size: 14px !important;
-        margin-bottom: 5px !important;
+        padding: 10px 14px !important;
+        font-size: 13px !important;
+        font-weight: 500 !important;
+        margin-bottom: 8px !important;
         width: 100% !important;
+        border-radius: 8px !important;
+        transition: all 0.2s ease !important;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+        white-space: normal !important;
+        display: block !important;
+        line-height: 1.4 !important;
     }
     .suggestion-btn button:hover {
-        background-color: #4f8bf9 !important;
-        color: white !important;
+        background-color: #f9fafb !important;
+        border-color: #cbd5e1 !important;
+        color: #1f2937 !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -80,15 +122,42 @@ if "uploaded_files_list" not in st.session_state:
 if "suggested_questions" not in st.session_state:
     st.session_state.suggested_questions = []
 
+# Initialize configuration parameters in session state
+if "chunk_size" not in st.session_state:
+    st.session_state.chunk_size = 1000
+
+if "chunk_overlap" not in st.session_state:
+    st.session_state.chunk_overlap = 200
+
+if "top_k" not in st.session_state:
+    st.session_state.top_k = 5
+
+if "min_similarity" not in st.session_state:
+    st.session_state.min_similarity = 0.25
+
+if "hybrid_alpha" not in st.session_state:
+    st.session_state.hybrid_alpha = 0.7
+
 # Trigger regeneration of suggested questions
 def reset_suggestions():
     st.session_state.suggested_questions = []
 
 # Sidebar Setup
 with st.sidebar:
-    st.image("https://img.icons8.com/nolan/96/artificial-intelligence.png", width=70)
-    st.title("RAG Settings")
-    st.markdown("Configure your Retrieval-Augmented Generation parameters.")
+    # Minimalist Logo & Title
+    st.markdown("""
+    <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px; margin-bottom: 20px;">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <line x1="10" y1="9" x2="8" y2="9"></line>
+        </svg>
+        <span style="font-size: 20px; font-weight: 600; color: #111827; letter-spacing: -0.02em;">RAG Navigator</span>
+    </div>
+    """, unsafe_allow_html=True)
+    st.caption("A clean, minimalist workspace for document exploration.")
     
     st.divider()
     
@@ -108,22 +177,65 @@ with st.sidebar:
 
     st.divider()
 
-    # RAG Parameters
-    st.subheader("Retrieval & Search Settings")
-    chunk_size = st.slider("Chunk Size (characters)", min_value=100, max_value=2000, value=1000, step=50)
-    chunk_overlap = st.slider("Chunk Overlap (characters)", min_value=0, max_value=500, value=200, step=10)
-    top_k = st.slider("Retrieval Count (Top K)", min_value=1, max_value=10, value=5)
-    min_similarity = st.slider("Min Similarity Score", min_value=0.0, max_value=1.0, value=0.25, step=0.05)
-    
-    # Hybrid Search Weight Control
-    hybrid_alpha = st.slider(
-        "Hybrid Search Weight (Alpha)", 
-        min_value=0.0, 
-        max_value=1.0, 
-        value=0.7, 
-        step=0.05,
-        help="1.0 = Pure Vector Search (embeddings). 0.0 = Pure Keyword Match. 0.7 = Blended (Recommended)."
-    )
+    # RAG parameters inside a clean form to prevent laggy page reruns
+    with st.expander("⚙️ Configuration Options", expanded=False):
+        with st.form("settings_form"):
+            st.markdown("##### Ingestion Settings")
+            st.caption("Applied when uploading new files")
+            chunk_size_val = st.slider(
+                "Chunk Size (chars)", 
+                min_value=100, 
+                max_value=2000, 
+                value=st.session_state.chunk_size, 
+                step=50,
+                help="The size of text segments processed at once."
+            )
+            chunk_overlap_val = st.slider(
+                "Chunk Overlap (chars)", 
+                min_value=0, 
+                max_value=500, 
+                value=st.session_state.chunk_overlap, 
+                step=10,
+                help="Overlapping characters between chunks to preserve context boundaries."
+            )
+            
+            st.divider()
+            
+            st.markdown("##### Retrieval & Search Settings")
+            st.caption("Applied to search queries")
+            top_k_val = st.slider(
+                "Retrieval Count (Top K)", 
+                min_value=1, 
+                max_value=10, 
+                value=st.session_state.top_k,
+                help="Maximum number of relevant chunks to send to the LLM."
+            )
+            min_similarity_val = st.slider(
+                "Min Similarity Score", 
+                min_value=0.0, 
+                max_value=1.0, 
+                value=st.session_state.min_similarity, 
+                step=0.05,
+                help="Minimum relevance score threshold for retrieved snippets."
+            )
+            
+            # Hybrid Search Weight Control
+            hybrid_alpha_val = st.slider(
+                "Hybrid Weight (Alpha)", 
+                min_value=0.0, 
+                max_value=1.0, 
+                value=st.session_state.hybrid_alpha, 
+                step=0.05,
+                help="1.0 = Pure Semantic/Vector Search. 0.0 = Pure Exact Keyword Match. 0.7 = Blended (Recommended)."
+            )
+            
+            if st.form_submit_button("Save & Apply Settings", use_container_width=True):
+                st.session_state.chunk_size = chunk_size_val
+                st.session_state.chunk_overlap = chunk_overlap_val
+                st.session_state.top_k = top_k_val
+                st.session_state.min_similarity = min_similarity_val
+                st.session_state.hybrid_alpha = hybrid_alpha_val
+                st.toast("Settings updated successfully!", icon="⚙️")
 
     st.divider()
     
@@ -209,8 +321,8 @@ with st.expander("📁 Document Ingestion Panel", expanded=(total_docs == 0)):
                         num_chunks = st.session_state.rag_engine.add_document(
                             file_name=uploaded_file.name,
                             file_path=tmp_path,
-                            chunk_size=chunk_size,
-                            chunk_overlap=chunk_overlap
+                            chunk_size=st.session_state.chunk_size,
+                            chunk_overlap=st.session_state.chunk_overlap
                         )
                         newly_added += 1
                         st.info(f"Parsed '{uploaded_file.name}' into {num_chunks} chunks.")
@@ -314,9 +426,9 @@ if prompt:
                     response, sources = st.session_state.rag_engine.query_with_context(
                         query=prompt,
                         chat_history=st.session_state.chat_history[:-1],
-                        top_k=top_k,
-                        min_similarity=min_similarity,
-                        hybrid_alpha=hybrid_alpha
+                        top_k=st.session_state.top_k,
+                        min_similarity=st.session_state.min_similarity,
+                        hybrid_alpha=st.session_state.hybrid_alpha
                     )
                     message_placeholder.markdown(response)
                     

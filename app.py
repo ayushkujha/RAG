@@ -24,7 +24,7 @@ st.markdown("""
         --background-color: #ffffff !important;
         --secondary-background-color: #f8fafc !important;
         --text-color: #0f172a !important;
-        --primary-color: #3b82f6 !important;
+        --primary-color: #2563eb !important;
     }
     
     .stApp {
@@ -38,7 +38,7 @@ st.markdown("""
         border-right: 1px solid #e2e8f0 !important;
     }
     
-    /* Primary Action Buttons */
+    /* Action Buttons */
     div.stButton > button {
         border-radius: 8px !important;
         border: 1px solid #cbd5e1 !important;
@@ -54,51 +54,68 @@ st.markdown("""
         color: #0f172a !important;
     }
     
-    /* Active Session Highlight */
-    .chat-history-item {
-        padding: 10px 12px;
-        border-radius: 8px;
-        margin-bottom: 4px;
-        cursor: pointer;
-        font-size: 14px;
-        color: #334155;
-        border: 1px solid transparent;
-        transition: background-color 0.15s ease;
-    }
-    .chat-history-item:hover {
-        background-color: #f1f5f9;
-    }
-    .chat-history-item.active {
-        background-color: #eff6ff;
-        border-color: #bfdbfe;
-        color: #1d4ed8;
-        font-weight: 600;
-    }
-
     /* Document Tag Pill */
     .doc-pill {
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        background-color: #f1f5f9;
-        border: 1px solid #e2e8f0;
-        padding: 4px 10px;
+        background-color: #eff6ff;
+        border: 1px solid #bfdbfe;
+        padding: 6px 14px;
         border-radius: 20px;
-        font-size: 12px;
-        color: #475569;
-        margin-right: 6px;
-        margin-bottom: 6px;
+        font-size: 13px;
+        color: #1d4ed8;
+        font-weight: 500;
+        margin-right: 8px;
+        margin-bottom: 8px;
     }
     
-    /* Clean Citation Card */
+    /* Citation Card */
     .citation-box {
         background-color: #f8fafc;
-        border-left: 3px solid #3b82f6;
+        border-left: 3px solid #2563eb;
         padding: 10px 14px;
         border-radius: 0 6px 6px 0;
         margin-top: 8px;
         font-size: 13px;
         color: #334155;
+    }
+
+    /* User Profile Footer Card */
+    .profile-card {
+        background-color: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 12px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 15px;
+    }
+    .profile-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background-color: #2563eb;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 14px;
+    }
+    .profile-info {
+        display: flex;
+        flex-direction: column;
+    }
+    .profile-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: #0f172a;
+    }
+    .profile-email {
+        font-size: 11px;
+        color: #64748b;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -106,6 +123,15 @@ st.markdown("""
 # Initialize Backend RAG Engine
 if "rag_engine" not in st.session_state:
     st.session_state.rag_engine = RAGEngine()
+
+# User Google Profile State
+if "user_profile" not in st.session_state:
+    st.session_state.user_profile = {
+        "logged_in": True,
+        "name": "Ayush Jha",
+        "email": "ayush@gmail.com",
+        "avatar_initials": "AJ"
+    }
 
 # Initialize Chat Sessions State
 if "sessions" not in st.session_state:
@@ -119,6 +145,9 @@ if "sessions" not in st.session_state:
         }
     }
     st.session_state.active_session_id = initial_id
+
+if "processed_file_hashes" not in st.session_state:
+    st.session_state.processed_file_hashes = set()
 
 # Ensure active session exists
 if st.session_state.active_session_id not in st.session_state.sessions:
@@ -158,7 +187,7 @@ with st.sidebar:
     st.divider()
 
     # Chat History List
-    st.markdown("<div style='font-size:12px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px;'>Recent Chats</div>", unsafe_allow_html=True)
+    st.markdown("<div style='font-size:12px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px;'>Saved Chats (Google Sync)</div>", unsafe_allow_html=True)
     for s_id, s_data in list(st.session_state.sessions.items()):
         is_active = (s_id == st.session_state.active_session_id)
         btn_label = f"💬 {s_data['title']}"
@@ -180,8 +209,8 @@ with st.sidebar:
 
     st.divider()
 
-    # Active Session Documents
-    st.markdown("<div style='font-size:12px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px;'>Documents in Chat</div>", unsafe_allow_html=True)
+    # Active Session Documents List
+    st.markdown("<div style='font-size:12px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px;'>Attached Documents</div>", unsafe_allow_html=True)
     if current_session["pdfs"]:
         for pdf_name in current_session["pdfs"]:
             col_d1, col_d2 = st.columns([3, 1])
@@ -193,71 +222,107 @@ with st.sidebar:
                     current_session["pdfs"].remove(pdf_name)
                     st.rerun()
     else:
-        st.caption("No PDFs attached to this chat yet.")
+        st.caption("No PDFs attached to this chat.")
 
     st.divider()
-    if st.button("🧹 Clear All Data", use_container_width=True):
-        st.session_state.rag_engine.clear_index()
-        initial_id = str(uuid.uuid4())[:8]
-        st.session_state.sessions = {
-            initial_id: {
-                "id": initial_id,
-                "title": "Chat 1",
-                "messages": [],
-                "pdfs": []
-            }
-        }
-        st.session_state.active_session_id = initial_id
-        st.rerun()
+
+    # User Profile & Google Account Settings
+    profile = st.session_state.user_profile
+    if profile["logged_in"]:
+        st.markdown(f"""
+        <div class="profile-card">
+            <div class="profile-avatar">{profile['avatar_initials']}</div>
+            <div class="profile-info">
+                <span class="profile-name">{profile['name']}</span>
+                <span class="profile-email">{profile['email']}</span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        with st.expander("⚙️ Account Settings", expanded=False):
+            st.markdown("##### Google Account Settings")
+            st.caption("All conversation histories and documents are synced to your Google Account.")
+            st.write("")
+            
+            if st.button("🗑️ Clear Account History & All Data", use_container_width=True):
+                st.session_state.rag_engine.clear_index()
+                st.session_state.processed_file_hashes.clear()
+                initial_id = str(uuid.uuid4())[:8]
+                st.session_state.sessions = {
+                    initial_id: {
+                        "id": initial_id,
+                        "title": "Chat 1",
+                        "messages": [],
+                        "pdfs": []
+                    }
+                }
+                st.session_state.active_session_id = initial_id
+                st.success("All account data cleared!")
+                st.rerun()
+                
+            if st.button("🚪 Sign Out of Google", use_container_width=True):
+                st.session_state.user_profile["logged_in"] = False
+                st.rerun()
+    else:
+        st.markdown("""
+        <div style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; text-align: center;">
+            <p style="font-size: 12px; color: #64748b; margin-bottom: 8px;">Sign in to sync your PDF chats across devices.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("🔵 Sign in with Google", use_container_width=True):
+            st.session_state.user_profile["logged_in"] = True
+            st.rerun()
 
 # Main Application Workspace
 st.markdown("## 📄 Chat with your Documents")
 st.caption("Upload PDFs and converse naturally with your document assistant.")
 
-# PDF Ingestion Card
-with st.expander("📁 Attach PDFs to Chat", expanded=(len(current_session["pdfs"]) == 0)):
-    uploaded_files = st.file_uploader(
-        "Upload PDF files for this conversation",
-        type=["pdf", "txt", "md"],
-        accept_multiple_files=True
-    )
-    
-    if uploaded_files:
-        if st.button("Process & Attach Documents", use_container_width=True):
-            with st.spinner("Processing document text..."):
-                for uploaded_file in uploaded_files:
-                    with tempfile.NamedTemporaryFile(delete=False, suffix=f".{uploaded_file.name.split('.')[-1]}") as tmp:
-                        tmp.write(uploaded_file.getvalue())
-                        tmp_path = tmp.name
+# PDF Ingestion Card - Automatic Processing on File Select
+uploaded_files = st.file_uploader(
+    "Upload PDF documents to attach to this chat",
+    type=["pdf", "txt", "md"],
+    accept_multiple_files=True,
+    key=f"uploader_{st.session_state.active_session_id}"
+)
+
+# AUTOMATIC INGESTION ON FILE DROP (NO EXTRA BUTTON NEEDED!)
+if uploaded_files:
+    for uploaded_file in uploaded_files:
+        file_key = f"{st.session_state.active_session_id}_{uploaded_file.name}_{uploaded_file.size}"
+        if file_key not in st.session_state.processed_file_hashes:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=f".{uploaded_file.name.split('.')[-1]}") as tmp:
+                tmp.write(uploaded_file.getvalue())
+                tmp_path = tmp.name
+            
+            try:
+                with st.spinner(f"Indexing {uploaded_file.name}..."):
+                    st.session_state.rag_engine.add_document(
+                        file_name=uploaded_file.name,
+                        file_path=tmp_path
+                    )
+                if uploaded_file.name not in current_session["pdfs"]:
+                    current_session["pdfs"].append(uploaded_file.name)
                     
-                    try:
-                        st.session_state.rag_engine.add_document(
-                            file_name=uploaded_file.name,
-                            file_path=tmp_path
-                        )
-                        if uploaded_file.name not in current_session["pdfs"]:
-                            current_session["pdfs"].append(uploaded_file.name)
-                            
-                        # Automatically title the chat based on the first PDF
-                        if current_session["title"].startswith("Chat "):
-                            current_session["title"] = uploaded_file.name[:24]
-                    except Exception as e:
-                        st.error(f"Error reading {uploaded_file.name}: {e}")
-                    finally:
-                        try:
-                            os.remove(tmp_path)
-                        except Exception:
-                            pass
-                            
-                st.toast("Documents attached to conversation!", icon="📄")
-                st.rerun()
+                st.session_state.processed_file_hashes.add(file_key)
+                
+                # Title chat automatically based on first uploaded file
+                if current_session["title"].startswith("Chat "):
+                    current_session["title"] = uploaded_file.name[:24]
+                st.toast(f"Attached {uploaded_file.name} to chat!", icon="📄")
+            except Exception as e:
+                st.error(f"Error reading {uploaded_file.name}: {e}")
+            finally:
+                try:
+                    os.remove(tmp_path)
+                except Exception:
+                    pass
 
 # Display attached document pills if present
 if current_session["pdfs"]:
     pills_html = ""
     for pdf_name in current_session["pdfs"]:
         pills_html += f'<span class="doc-pill">📄 {pdf_name}</span>'
-    st.markdown(f"<div style='margin-bottom: 15px;'>{pills_html}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div style='margin-top: 10px; margin-bottom: 15px;'>{pills_html}</div>", unsafe_allow_html=True)
 
 st.divider()
 

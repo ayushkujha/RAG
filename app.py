@@ -16,99 +16,106 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Premium Minimalist Dark Theme Custom CSS
+# Vibrant Pastel Sunset Mesh Gradient & Floating Dark Glassmorphism CSS
 st.markdown("""
 <style>
-    /* Dark Theme Core Variables */
-    :root, .stApp, [data-testid="stAppViewContainer"], [data-testid="stSidebar"] {
-        --background-color: #0b0f19 !important;
-        --secondary-background-color: #111827 !important;
-        --text-color: #f8fafc !important;
-        --primary-color: #3b82f6 !important;
-    }
-    
-    .stApp {
-        background-color: #0b0f19 !important;
-        color: #f8fafc !important;
+    /* Colorful Pastel Mesh Gradient Canvas */
+    :root, .stApp, [data-testid="stAppViewContainer"] {
+        background: linear-gradient(135deg, #a78bfa 0%, #c084fc 25%, #f472b6 55%, #fb923c 85%, #fdba74 100%) !important;
+        background-attachment: fixed !important;
+        color: #ffffff !important;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
     }
     
+    /* Dark Glassmorphism Sidebar */
     [data-testid="stSidebar"] {
-        background-color: #111827 !important;
-        border-right: 1px solid #1f2937 !important;
+        background: rgba(15, 23, 42, 0.88) !important;
+        backdrop-filter: blur(20px) !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.15) !important;
     }
     
-    /* Top Navbar */
-    .top-navbar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 10px 0 20px 0;
-        border-bottom: 1px solid #1f2937;
-        margin-bottom: 30px;
-    }
-    
-    /* Button Styling */
+    /* Dark Buttons */
     div.stButton > button {
-        border-radius: 8px !important;
-        border: 1px solid #374151 !important;
-        background-color: #1f2937 !important;
-        color: #f3f4f6 !important;
+        border-radius: 10px !important;
+        border: 1px solid rgba(255, 255, 255, 0.18) !important;
+        background-color: rgba(30, 41, 59, 0.8) !important;
+        color: #ffffff !important;
         font-weight: 500 !important;
         padding: 8px 16px !important;
+        backdrop-filter: blur(10px) !important;
         transition: all 0.15s ease-in-out !important;
     }
     div.stButton > button:hover {
-        background-color: #374151 !important;
-        border-color: #4b5563 !important;
+        background-color: rgba(51, 65, 85, 0.95) !important;
+        border-color: rgba(255, 255, 255, 0.3) !important;
         color: #ffffff !important;
+        transform: translateY(-1px) !important;
     }
     
+    /* Floating Hero Dark Card */
+    .hero-glass-card {
+        background: rgba(24, 24, 27, 0.88);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 24px;
+        padding: 45px 35px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+        max-width: 720px;
+        margin: 30px auto 20px auto;
+        text-align: center;
+    }
+    
+    .hero-title {
+        font-size: 38px;
+        font-weight: 800;
+        color: #ffffff;
+        letter-spacing: -0.03em;
+        margin-bottom: 12px;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    }
+    .hero-subhead {
+        font-size: 16px;
+        color: #cbd5e1;
+        max-width: 580px;
+        margin: 0 auto;
+        line-height: 1.5;
+    }
+
     /* Document Tag Pill */
     .doc-pill {
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        background-color: #1e293b;
-        border: 1px solid #334155;
+        background-color: rgba(30, 41, 59, 0.9);
+        border: 1px solid rgba(255, 255, 255, 0.2);
         padding: 6px 14px;
         border-radius: 20px;
         font-size: 13px;
-        color: #60a5fa;
+        color: #93c5fd;
         font-weight: 500;
         margin-right: 8px;
         margin-bottom: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
     
     /* Citation Box */
     .citation-box {
-        background-color: #1e293b;
-        border-left: 3px solid #3b82f6;
+        background-color: rgba(30, 41, 59, 0.9);
+        border-left: 3px solid #60a5fa;
         padding: 10px 14px;
         border-radius: 0 6px 6px 0;
         margin-top: 8px;
         font-size: 13px;
-        color: #cbd5e1;
+        color: #e2e8f0;
     }
-
-    /* Centered Hero Header */
-    .hero-container {
-        text-align: center;
-        margin-top: 40px;
-        margin-bottom: 30px;
-    }
-    .hero-title {
-        font-size: 36px;
-        font-weight: 800;
-        color: #ffffff;
-        letter-spacing: -0.03em;
-        margin-bottom: 10px;
-    }
-    .hero-subhead {
-        font-size: 16px;
-        color: #94a3b8;
-        max-width: 600px;
-        margin: 0 auto;
+    
+    /* Chat Expander Styling */
+    .streamlit-expanderHeader {
+        background-color: rgba(24, 24, 27, 0.85) !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        border-radius: 12px !important;
+        color: #ffffff !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -153,7 +160,7 @@ with st.sidebar:
     # Branding Header
     st.markdown("""
     <div style="display: flex; align-items: center; gap: 10px; margin-top: 4px; margin-bottom: 16px;">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
             <polyline points="14 2 14 8 20 8"></polyline>
             <line x1="16" y1="13" x2="8" y2="13"></line>
@@ -180,7 +187,7 @@ with st.sidebar:
     st.divider()
 
     # Saved Chats History
-    st.markdown("<div style='font-size:12px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px;'>Recent Chats</div>", unsafe_allow_html=True)
+    st.markdown("<div style='font-size:12px; font-weight:600; color:#94a3b8; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px;'>Recent Chats</div>", unsafe_allow_html=True)
     for s_id, s_data in list(st.session_state.sessions.items()):
         is_active = (s_id == st.session_state.active_session_id)
         btn_label = f"💬 {s_data['title']}"
@@ -203,7 +210,7 @@ with st.sidebar:
     st.divider()
 
     # Attached Documents List
-    st.markdown("<div style='font-size:12px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px;'>Attached Documents</div>", unsafe_allow_html=True)
+    st.markdown("<div style='font-size:12px; font-weight:600; color:#94a3b8; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px;'>Attached Documents</div>", unsafe_allow_html=True)
     if current_session["pdfs"]:
         for doc_name in current_session["pdfs"]:
             col_d1, col_d2 = st.columns([3, 1])
@@ -223,7 +230,7 @@ with st.sidebar:
     profile = st.session_state.user_profile
     if profile["logged_in"]:
         st.markdown(f"""
-        <div style="background-color: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 10px; margin-bottom: 10px;">
+        <div style="background-color: rgba(30, 41, 59, 0.8); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 10px; margin-bottom: 10px;">
             <div style="font-size: 13px; font-weight: 600; color: #ffffff;">👤 {profile['name']}</div>
             <div style="font-size: 11px; color: #94a3b8;">{profile['email']}</div>
         </div>
@@ -257,11 +264,11 @@ with st.sidebar:
 # Top Navigation Bar
 col_nav1, col_nav2 = st.columns([4, 1])
 with col_nav1:
-    st.markdown("<span style='font-size: 18px; font-weight: 600; color: #f8fafc;'>📄 DocuChat AI</span>", unsafe_allow_html=True)
+    st.markdown("<span style='font-size: 20px; font-weight: 700; color: #ffffff; text-shadow: 0 2px 8px rgba(0,0,0,0.3);'>📄 DocuChat AI</span>", unsafe_allow_html=True)
 with col_nav2:
     profile = st.session_state.user_profile
     if profile["logged_in"]:
-        st.markdown(f"<div style='text-align: right;'><span style='font-size: 13px; background-color: #1e293b; border: 1px solid #334155; padding: 6px 12px; border-radius: 20px; color: #60a5fa;'>👤 {profile['name']}</span></div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='text-align: right;'><span style='font-size: 13px; background-color: rgba(30, 41, 59, 0.85); border: 1px solid rgba(255, 255, 255, 0.2); padding: 6px 14px; border-radius: 20px; color: #ffffff;'>👤 {profile['name']}</span></div>", unsafe_allow_html=True)
     else:
         if st.button("Sign In / Visitor Mode", key="top_signin"):
             st.session_state.user_profile["logged_in"] = True
@@ -317,12 +324,19 @@ if current_session["pdfs"]:
         pills_html += f'<span class="doc-pill">📄 {doc_name}</span>'
     st.markdown(f"<div style='margin-bottom: 15px;'>{pills_html}</div>", unsafe_allow_html=True)
 
-# Centered Landing View (if no messages yet in active chat)
+# Centered Hero View over Vibrant Mesh Canvas (if no messages yet)
 if len(current_session["messages"]) == 0:
     st.markdown("""
-    <div class="hero-container">
-        <div class="hero-title">What would you like to analyze today?</div>
-        <div class="hero-subhead">Attach any PDF, Word, Excel, CSV, or Text document above and type your question below.</div>
+    <div class="hero-glass-card">
+        <div class="hero-title">Type your message here...</div>
+        <div class="hero-subhead">Attach any PDF, Word, Excel, CSV, or Text document above and start asking questions instantly.</div>
+        <div style="display: flex; justify-content: center; gap: 18px; margin-top: 24px; color: #cbd5e1; font-size: 20px;">
+            <span title="Attach Document">📎</span>
+            <span title="Web Search">🌐</span>
+            <span title="Settings">⚙️</span>
+            <span title="Files">📁</span>
+            <span title="Voice">🎙️</span>
+        </div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -339,7 +353,7 @@ for message in current_session["messages"]:
                     st.markdown(f'<div class="citation-box">{src["text"]}</div>', unsafe_allow_html=True)
 
 # Fixed Prompt Input Bar
-prompt = st.chat_input("Ask a question about your documents...")
+prompt = st.chat_input("Type your message here...")
 
 if prompt:
     with st.chat_message("user"):

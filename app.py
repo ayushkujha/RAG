@@ -19,17 +19,31 @@ st.set_page_config(
 # Vibrant Pastel Sunset Mesh Gradient & Floating Dark Glassmorphism CSS
 st.markdown("""
 <style>
-    /* Colorful Pastel Mesh Gradient Canvas */
-    :root, .stApp, [data-testid="stAppViewContainer"] {
+    /* Edge-to-Edge Colorful Pastel Mesh Gradient Canvas */
+    :root, .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"], header[data-testid="stHeader"] {
         background: linear-gradient(135deg, #a78bfa 0%, #c084fc 25%, #f472b6 55%, #fb923c 85%, #fdba74 100%) !important;
         background-attachment: fixed !important;
         color: #ffffff !important;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
     }
     
+    header[data-testid="stHeader"] {
+        background: transparent !important;
+        background-color: transparent !important;
+    }
+    
+    [data-testid="stMainBlockContainer"] {
+        background: transparent !important;
+        padding-top: 2rem !important;
+    }
+    
+    div[data-testid="stToolbar"] {
+        display: none !important;
+    }
+    
     /* Dark Glassmorphism Sidebar */
     [data-testid="stSidebar"] {
-        background: rgba(15, 23, 42, 0.88) !important;
+        background: rgba(15, 23, 42, 0.92) !important;
         backdrop-filter: blur(20px) !important;
         border-right: 1px solid rgba(255, 255, 255, 0.15) !important;
     }
@@ -37,17 +51,17 @@ st.markdown("""
     /* Dark Buttons */
     div.stButton > button {
         border-radius: 10px !important;
-        border: 1px solid rgba(255, 255, 255, 0.18) !important;
-        background-color: rgba(30, 41, 59, 0.8) !important;
+        border: 1px solid rgba(255, 255, 255, 0.22) !important;
+        background-color: rgba(24, 24, 27, 0.85) !important;
         color: #ffffff !important;
         font-weight: 500 !important;
         padding: 8px 16px !important;
-        backdrop-filter: blur(10px) !important;
+        backdrop-filter: blur(12px) !important;
         transition: all 0.15s ease-in-out !important;
     }
     div.stButton > button:hover {
-        background-color: rgba(51, 65, 85, 0.95) !important;
-        border-color: rgba(255, 255, 255, 0.3) !important;
+        background-color: rgba(39, 39, 42, 0.95) !important;
+        border-color: rgba(255, 255, 255, 0.4) !important;
         color: #ffffff !important;
         transform: translateY(-1px) !important;
     }
@@ -57,10 +71,10 @@ st.markdown("""
         background: rgba(24, 24, 27, 0.88);
         backdrop-filter: blur(24px);
         -webkit-backdrop-filter: blur(24px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        border-radius: 28px;
         padding: 45px 35px;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
         max-width: 720px;
         margin: 30px auto 20px auto;
         text-align: center;
@@ -76,10 +90,22 @@ st.markdown("""
     }
     .hero-subhead {
         font-size: 16px;
-        color: #cbd5e1;
+        color: #e2e8f0;
         max-width: 580px;
         margin: 0 auto;
         line-height: 1.5;
+    }
+
+    /* Floating Chat Prompt Pill Box */
+    div[data-testid="stChatInput"] {
+        background-color: rgba(24, 24, 27, 0.92) !important;
+        border: 1px solid rgba(255, 255, 255, 0.25) !important;
+        border-radius: 24px !important;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.35) !important;
+        backdrop-filter: blur(16px) !important;
+    }
+    div[data-testid="stChatInput"] textarea {
+        color: #ffffff !important;
     }
 
     /* Document Tag Pill */
@@ -87,8 +113,8 @@ st.markdown("""
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        background-color: rgba(30, 41, 59, 0.9);
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        background-color: rgba(24, 24, 27, 0.9);
+        border: 1px solid rgba(255, 255, 255, 0.22);
         padding: 6px 14px;
         border-radius: 20px;
         font-size: 13px;
@@ -101,7 +127,7 @@ st.markdown("""
     
     /* Citation Box */
     .citation-box {
-        background-color: rgba(30, 41, 59, 0.9);
+        background-color: rgba(24, 24, 27, 0.9);
         border-left: 3px solid #60a5fa;
         padding: 10px 14px;
         border-radius: 0 6px 6px 0;
@@ -113,7 +139,7 @@ st.markdown("""
     /* Chat Expander Styling */
     .streamlit-expanderHeader {
         background-color: rgba(24, 24, 27, 0.85) !important;
-        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        border: 1px solid rgba(255, 255, 255, 0.18) !important;
         border-radius: 12px !important;
         color: #ffffff !important;
     }
@@ -230,7 +256,7 @@ with st.sidebar:
     profile = st.session_state.user_profile
     if profile["logged_in"]:
         st.markdown(f"""
-        <div style="background-color: rgba(30, 41, 59, 0.8); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 10px; margin-bottom: 10px;">
+        <div style="background-color: rgba(24, 24, 27, 0.85); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 10px; margin-bottom: 10px;">
             <div style="font-size: 13px; font-weight: 600; color: #ffffff;">👤 {profile['name']}</div>
             <div style="font-size: 11px; color: #94a3b8;">{profile['email']}</div>
         </div>
@@ -264,11 +290,11 @@ with st.sidebar:
 # Top Navigation Bar
 col_nav1, col_nav2 = st.columns([4, 1])
 with col_nav1:
-    st.markdown("<span style='font-size: 20px; font-weight: 700; color: #ffffff; text-shadow: 0 2px 8px rgba(0,0,0,0.3);'>📄 DocuChat AI</span>", unsafe_allow_html=True)
+    st.markdown("<span style='font-size: 22px; font-weight: 800; color: #ffffff; text-shadow: 0 2px 10px rgba(0,0,0,0.3);'>📄 DocuChat AI</span>", unsafe_allow_html=True)
 with col_nav2:
     profile = st.session_state.user_profile
     if profile["logged_in"]:
-        st.markdown(f"<div style='text-align: right;'><span style='font-size: 13px; background-color: rgba(30, 41, 59, 0.85); border: 1px solid rgba(255, 255, 255, 0.2); padding: 6px 14px; border-radius: 20px; color: #ffffff;'>👤 {profile['name']}</span></div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='text-align: right;'><span style='font-size: 13px; background-color: rgba(24, 24, 27, 0.85); border: 1px solid rgba(255, 255, 255, 0.2); padding: 6px 14px; border-radius: 20px; color: #ffffff;'>👤 {profile['name']}</span></div>", unsafe_allow_html=True)
     else:
         if st.button("Sign In / Visitor Mode", key="top_signin"):
             st.session_state.user_profile["logged_in"] = True
@@ -324,13 +350,13 @@ if current_session["pdfs"]:
         pills_html += f'<span class="doc-pill">📄 {doc_name}</span>'
     st.markdown(f"<div style='margin-bottom: 15px;'>{pills_html}</div>", unsafe_allow_html=True)
 
-# Centered Hero View over Vibrant Mesh Canvas (if no messages yet)
+# Centered Hero View over Edge-to-Edge Mesh Canvas (if no messages yet)
 if len(current_session["messages"]) == 0:
     st.markdown("""
     <div class="hero-glass-card">
         <div class="hero-title">Type your message here...</div>
         <div class="hero-subhead">Attach any PDF, Word, Excel, CSV, or Text document above and start asking questions instantly.</div>
-        <div style="display: flex; justify-content: center; gap: 18px; margin-top: 24px; color: #cbd5e1; font-size: 20px;">
+        <div style="display: flex; justify-content: center; gap: 20px; margin-top: 24px; color: #ffffff; font-size: 22px;">
             <span title="Attach Document">📎</span>
             <span title="Web Search">🌐</span>
             <span title="Settings">⚙️</span>
@@ -352,7 +378,7 @@ for message in current_session["messages"]:
                     st.markdown(f"**Source {idx+1}:** `📄 {doc_name}` — *Page {page_num}*")
                     st.markdown(f'<div class="citation-box">{src["text"]}</div>', unsafe_allow_html=True)
 
-# Fixed Prompt Input Bar
+# Fixed Floating Prompt Input Pill
 prompt = st.chat_input("Type your message here...")
 
 if prompt:

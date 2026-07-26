@@ -8,7 +8,7 @@ from pypdf import PdfReader
 from google import genai
 from google.genai import types
 
-# Load environment variables from .env file automatically
+# Load environment variables automatically
 load_dotenv()
 
 class RAGEngine:
@@ -21,7 +21,7 @@ class RAGEngine:
             except Exception:
                 self.client = None
             
-        # Initialize persistent ChromaDB Vector Store with local default embedding function
+        # Initialize persistent ChromaDB Vector Store
         self.db_path = db_path
         self.chroma_client = chromadb.PersistentClient(path=self.db_path)
         self.default_ef = embedding_functions.DefaultEmbeddingFunction()
@@ -62,6 +62,55 @@ class RAGEngine:
                 pass
                     
         return pages_content
+
+    def extract_text_from_docx(self, file_path):
+        """Extract text from Word document (.docx)."""
+        import docx
+        doc = docx.Document(file_path)
+        paragraphs = [para.text for para in doc.paragraphs if para.text.strip()]
+        return [{"text": "\n".join(paragraphs), "page": 1}]
+
+    def extract_text_from_csv(self, file_path):
+        """Extract rows from CSV file."""
+        import csv
+        rows = []
+        with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+            reader = csv.reader(f)
+            for row in reader:
+                if any(row):
+                    rows.append(" | ".join([cell.strip() for cell in row]))
+        return [{"text": "\n".join(rows), "page": 1}]
+
+    def extract_text_from_xlsx(self, file_path):
+        """Extract rows from Excel workbook (.xlsx)."""
+        import openpyxl
+        wb = openpyxl.load_workbook(file_path, read_only=True, data_only=True)
+        sheets_content = []
+        for sheet_name in wb.sheetnames:
+            sheet = wb[sheet_name]
+            sheet_rows = []
+            for row in sheet.iter_rows(values_only=True):
+                if any(row):
+                    sheet_rows.append(" | ".join([str(val).strip() if val is not None else "" for val in row]))
+            if sheet_rows:
+                sheets_content.append(f"### Sheet: {sheet_name}\n" + "\n".join(sheet_rows))
+        return [{"text": "\n\n".join(sheets_content), "page": 1}]
+
+    def parse_document(self, file_path):
+        """Universal document extractor for PDF, DOCX, CSV, XLSX, TXT, and MD files."""
+        ext = os.path.splitext(file_path)[1].lower()
+        if ext == ".pdf":
+            return self.extract_text_from_pdf(file_path)
+        elif ext == ".docx":
+            return self.extract_text_from_docx(file_path)
+        elif ext == ".csv":
+            return self.extract_text_from_csv(file_path)
+        elif ext in [".xlsx", ".xls"]:
+            return self.extract_text_from_xlsx(file_path)
+        else:
+            with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+                content = f.read()
+            return [{"text": content, "page": 1}]
 
     def chunk_text(self, text_blocks, chunk_size=800, chunk_overlap=150):
         """Split text blocks into overlapping chunks with page metadata."""
@@ -131,17 +180,11 @@ class RAGEngine:
                     except Exception:
                         continue
 
-        # Instant local vectorizer fallback if no key is configured or API call fails
         return self._local_embedding(text)
 
     def add_document(self, file_name, file_path, chunk_size=800, chunk_overlap=150):
         """Extract text, chunk, embed, and store document in ChromaDB."""
-        text_blocks = self.extract_text_from_pdf(file_path)
-        if not text_blocks:
-            with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
-                content = f.read()
-            text_blocks = [{"text": content, "page": 1}]
-
+        text_blocks = self.parse_document(file_path)
         chunks = self.chunk_text(text_blocks, chunk_size, chunk_overlap)
         if not chunks:
             return 0
@@ -249,7 +292,7 @@ class RAGEngine:
                 context_blocks.append(f"[Source: {source}, Page: {page}]\n{chunk['text']}")
             context_str = "\n\n".join(context_blocks)
         else:
-            context_str = "No relevant document chunks found in database."
+            context_str = "No relevant document context found in uploaded files."
 
         key = self.api_key or os.environ.get("GEMINI_API_KEY")
         if key:
@@ -261,14 +304,13 @@ class RAGEngine:
 
             if self.client:
                 system_instruction = (
-                    "You are an AI Study & Research Assistant. You help users understand and chat about their uploaded PDF documents.\n"
-                    "Answer questions accurately based ONLY on the provided document context snippets.\n"
+                    "You are an AI Document Assistant. You answer user questions strictly based on the provided context snippets.\n"
                     "If the context does not contain enough information to answer the question, state politely that the uploaded documents do not contain that information.\n"
                     "Always cite the relevant document name and page number when answering."
                 )
 
                 current_prompt = (
-                    f"Context from uploaded PDF documents:\n{context_str}\n\n"
+                    f"Context from uploaded documents:\n{context_str}\n\n"
                     f"User Question: {query}"
                 )
 
@@ -299,53 +341,15 @@ class RAGEngine:
                 except Exception as e:
                     print(f"GenAI call error: {e}")
 
-        # Natural response synthesis from retrieved PDF context
+        # Natural response synthesis from retrieved document context
         if retrieved_chunks:
             top_contexts = []
             for c in retrieved_chunks[:2]:
-                src = c["metadata"].get("source", "PDF")
+                src = c["metadata"].get("source", "Document")
                 pg = c["metadata"].get("page", 1)
                 top_contexts.append(f"**From {src} (Page {pg}):**\n\n{c['text']}")
             response_text = "\n\n---\n\n".join(top_contexts)
         else:
-            response_text = "I couldn't find any relevant information in your uploaded PDF documents regarding that question."
+            response_text = "I couldn't find any relevant information in your uploaded documents regarding that question."
 
         return response_text, retrieved_chunks
-
-    def generate_suggested_questions(self):
-        """Generate 3 study questions based on indexed document snippets."""
-        if self.collection.count() == 0:
-            return []
-            
-        data = self.collection.get(limit=5, include=["documents"])
-        docs = data.get("documents", [])
-        if not docs:
-            return []
-
-        key = self.api_key or os.environ.get("GEMINI_API_KEY")
-        if key:
-            if not self.client:
-                try:
-                    self.client = genai.Client(api_key=key)
-                except Exception:
-                    self.client = None
-
-            if self.client:
-                context_preview = "\n\n".join(docs[:3])
-                prompt = (
-                    "Based on these PDF document snippets, generate 3 clear, interesting, and specific questions a user could ask to study this content.\n"
-                    "Return ONLY the 3 questions as a plain list, one question per line, with no bullet points or extra text.\n\n"
-                    f"Snippets:\n{context_preview}"
-                )
-                try:
-                    response = self.client.models.generate_content(
-                        model="gemini-2.5-flash",
-                        contents=prompt,
-                        config=types.GenerateContentConfig(temperature=0.7)
-                    )
-                    questions = [q.strip().lstrip("0123456789.-*• ").strip() for q in response.text.split("\n") if q.strip()]
-                    return questions[:3]
-                except Exception:
-                    pass
-
-        return ["Summarize the main points of this PDF.", "What are the key concepts explained here?", "What conclusions does this document reach?"]

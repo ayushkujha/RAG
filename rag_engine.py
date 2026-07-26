@@ -2,9 +2,13 @@ import os
 import re
 import fitz  # PyMuPDF
 import chromadb
+from dotenv import load_dotenv
 from pypdf import PdfReader
 from google import genai
 from google.genai import types
+
+# Load environment variables from .env file automatically
+load_dotenv()
 
 class RAGEngine:
     def __init__(self, api_key=None, db_path="./chroma_db"):
@@ -25,6 +29,7 @@ class RAGEngine:
         """Dynamically update API key and GenAI client."""
         self.api_key = api_key
         if api_key:
+            os.environ["GEMINI_API_KEY"] = api_key
             self.client = genai.Client(api_key=api_key)
 
     def extract_text_from_pdf(self, file_path):

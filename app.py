@@ -1,7 +1,11 @@
 import os
 import tempfile
 import streamlit as st
+from dotenv import load_dotenv
 from rag_engine import RAGEngine
+
+# Load environment variables from .env file automatically
+load_dotenv()
 
 # Page Configuration
 st.set_page_config(
@@ -90,9 +94,14 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Initialize RAG Engine in session state
+# Manage API Key Session State & Engine
+if "api_key" not in st.session_state:
+    st.session_state.api_key = os.environ.get("GEMINI_API_KEY", "")
+
 if "rag_engine" not in st.session_state:
-    st.session_state.rag_engine = RAGEngine()
+    st.session_state.rag_engine = RAGEngine(api_key=st.session_state.api_key)
+elif st.session_state.api_key and not st.session_state.rag_engine.api_key:
+    st.session_state.rag_engine.set_api_key(st.session_state.api_key)
 
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
@@ -123,6 +132,25 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
     st.caption("Upload PDFs and converse directly with your documents.")
+    st.divider()
+
+    # API Key Configuration Card
+    has_api_key = bool(os.environ.get("GEMINI_API_KEY") or st.session_state.api_key)
+    with st.expander("🔑 API Key Setup", expanded=not has_api_key):
+        api_key_input = st.text_input(
+            "Gemini API Key",
+            value=st.session_state.api_key,
+            type="password",
+            help="Loaded automatically from .env or system environment if configured."
+        )
+        if api_key_input != st.session_state.api_key:
+            st.session_state.api_key = api_key_input
+            os.environ["GEMINI_API_KEY"] = api_key_input
+            st.session_state.rag_engine.set_api_key(api_key_input)
+            reset_suggestions()
+            st.success("API key updated!")
+            st.rerun()
+
     st.divider()
 
     # ChromaDB Statistics Card
@@ -192,9 +220,9 @@ with st.sidebar:
 st.title("📄 PDF AI Chat Companion")
 st.markdown("Upload your PDF files to index them into ChromaDB and start asking questions with instant page citations.")
 
-# Check for API Key in environment
-if not os.environ.get("GEMINI_API_KEY") and not st.session_state.rag_engine.api_key:
-    st.warning("⚠️ **GEMINI_API_KEY environment variable is not set.** Please make sure your `.env` or system environment variable contains a valid Gemini API key.")
+# Warning if API key is missing
+if not (os.environ.get("GEMINI_API_KEY") or st.session_state.api_key):
+    st.warning("⚠️ **Gemini API Key is not configured.** Please enter your key in the sidebar under **🔑 API Key Setup** or create a `.env` file containing `GEMINI_API_KEY=your_key`.")
 
 st.write("")
 

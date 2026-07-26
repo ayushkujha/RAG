@@ -16,12 +16,12 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Vibrant Pastel Sunset Mesh Gradient & Floating Dark Glassmorphism CSS
+# Exact Radial Gradient & #1F2023 Dark Prompt Box Theme
 st.markdown("""
 <style>
-    /* Edge-to-Edge Colorful Pastel Mesh Gradient Canvas */
+    /* Exact Radial Gradient Canvas from 21st.dev template */
     :root, .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"], header[data-testid="stHeader"] {
-        background: linear-gradient(135deg, #a78bfa 0%, #c084fc 25%, #f472b6 55%, #fb923c 85%, #fdba74 100%) !important;
+        background: radial-gradient(125% 125% at 50% 101%, rgba(245,87,2,1) 10.5%, rgba(245,120,2,1) 16%, rgba(245,140,2,1) 17.5%, rgba(245,170,100,1) 25%, rgba(238,174,202,1) 40%, rgba(202,179,214,1) 65%, rgba(148,201,233,1) 100%) !important;
         background-attachment: fixed !important;
         color: #ffffff !important;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
@@ -34,75 +34,104 @@ st.markdown("""
     
     [data-testid="stMainBlockContainer"] {
         background: transparent !important;
-        padding-top: 2rem !important;
+        padding-top: 1.5rem !important;
     }
     
     div[data-testid="stToolbar"] {
         display: none !important;
     }
     
-    /* Dark Glassmorphism Sidebar */
+    /* Dark Sidebar */
     [data-testid="stSidebar"] {
-        background: rgba(15, 23, 42, 0.92) !important;
-        backdrop-filter: blur(20px) !important;
-        border-right: 1px solid rgba(255, 255, 255, 0.15) !important;
+        background: #111215 !important;
+        border-right: 1px solid #2e3033 !important;
     }
     
     /* Dark Buttons */
     div.stButton > button {
-        border-radius: 10px !important;
-        border: 1px solid rgba(255, 255, 255, 0.22) !important;
-        background-color: rgba(24, 24, 27, 0.85) !important;
-        color: #ffffff !important;
+        border-radius: 12px !important;
+        border: 1px solid #444444 !important;
+        background-color: #1F2023 !important;
+        color: #f3f4f6 !important;
         font-weight: 500 !important;
         padding: 8px 16px !important;
-        backdrop-filter: blur(12px) !important;
         transition: all 0.15s ease-in-out !important;
     }
     div.stButton > button:hover {
-        background-color: rgba(39, 39, 42, 0.95) !important;
-        border-color: rgba(255, 255, 255, 0.4) !important;
+        background-color: #2E3033 !important;
+        border-color: #666666 !important;
         color: #ffffff !important;
         transform: translateY(-1px) !important;
     }
     
-    /* Floating Hero Dark Card */
-    .hero-glass-card {
-        background: rgba(24, 24, 27, 0.88);
-        backdrop-filter: blur(24px);
-        -webkit-backdrop-filter: blur(24px);
-        border: 1px solid rgba(255, 255, 255, 0.22);
-        border-radius: 28px;
-        padding: 45px 35px;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+    /* Floating Hero #1F2023 Prompt Container */
+    .prompt-box-card {
+        background: #1F2023;
+        border: 1px solid #444444;
+        border-radius: 24px;
+        padding: 35px 30px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
         max-width: 720px;
-        margin: 30px auto 20px auto;
+        margin: 25px auto 20px auto;
         text-align: center;
     }
     
     .hero-title {
-        font-size: 38px;
+        font-size: 34px;
         font-weight: 800;
         color: #ffffff;
         letter-spacing: -0.03em;
-        margin-bottom: 12px;
-        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        margin-bottom: 10px;
     }
     .hero-subhead {
-        font-size: 16px;
-        color: #e2e8f0;
+        font-size: 15px;
+        color: #9CA3AF;
         max-width: 580px;
-        margin: 0 auto;
+        margin: 0 auto 20px auto;
         line-height: 1.5;
     }
 
-    /* Floating Chat Prompt Pill Box */
+    /* Interactive Mode Buttons */
+    .mode-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        border: 1px solid #444444;
+        background-color: #2E3033;
+        color: #9CA3AF;
+        transition: all 0.2s ease;
+    }
+    .mode-pill:hover {
+        color: #ffffff;
+        border-color: #666666;
+    }
+    .mode-pill.active-search {
+        background-color: rgba(30, 174, 219, 0.2);
+        border-color: #1EAEDB;
+        color: #1EAEDB;
+    }
+    .mode-pill.active-think {
+        background-color: rgba(139, 92, 246, 0.2);
+        border-color: #8B5CF6;
+        color: #8B5CF6;
+    }
+    .mode-pill.active-canvas {
+        background-color: rgba(249, 115, 22, 0.2);
+        border-color: #F97316;
+        color: #F97316;
+    }
+
+    /* Floating Chat Prompt Input Box */
     div[data-testid="stChatInput"] {
-        background-color: rgba(24, 24, 27, 0.92) !important;
-        border: 1px solid rgba(255, 255, 255, 0.25) !important;
+        background-color: #1F2023 !important;
+        border: 1px solid #444444 !important;
         border-radius: 24px !important;
-        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.35) !important;
-        backdrop-filter: blur(16px) !important;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35) !important;
     }
     div[data-testid="stChatInput"] textarea {
         color: #ffffff !important;
@@ -113,8 +142,8 @@ st.markdown("""
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        background-color: rgba(24, 24, 27, 0.9);
-        border: 1px solid rgba(255, 255, 255, 0.22);
+        background-color: #1F2023;
+        border: 1px solid #444444;
         padding: 6px 14px;
         border-radius: 20px;
         font-size: 13px;
@@ -122,26 +151,17 @@ st.markdown("""
         font-weight: 500;
         margin-right: 8px;
         margin-bottom: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
     
     /* Citation Box */
     .citation-box {
-        background-color: rgba(24, 24, 27, 0.9);
+        background-color: #1F2023;
         border-left: 3px solid #60a5fa;
         padding: 10px 14px;
         border-radius: 0 6px 6px 0;
         margin-top: 8px;
         font-size: 13px;
         color: #e2e8f0;
-    }
-    
-    /* Chat Expander Styling */
-    .streamlit-expanderHeader {
-        background-color: rgba(24, 24, 27, 0.85) !important;
-        border: 1px solid rgba(255, 255, 255, 0.18) !important;
-        border-radius: 12px !important;
-        color: #ffffff !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -158,6 +178,10 @@ if "user_profile" not in st.session_state:
         "email": "visitor@docuchat.ai",
         "avatar_initials": "GV"
     }
+
+# Interactive Modes State
+if "active_mode" not in st.session_state:
+    st.session_state.active_mode = "standard"  # standard, search, think, canvas
 
 # Chat Sessions State
 if "sessions" not in st.session_state:
@@ -256,7 +280,7 @@ with st.sidebar:
     profile = st.session_state.user_profile
     if profile["logged_in"]:
         st.markdown(f"""
-        <div style="background-color: rgba(24, 24, 27, 0.85); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 10px; margin-bottom: 10px;">
+        <div style="background-color: #1F2023; border: 1px solid #444444; border-radius: 8px; padding: 10px; margin-bottom: 10px;">
             <div style="font-size: 13px; font-weight: 600; color: #ffffff;">👤 {profile['name']}</div>
             <div style="font-size: 11px; color: #94a3b8;">{profile['email']}</div>
         </div>
@@ -294,7 +318,7 @@ with col_nav1:
 with col_nav2:
     profile = st.session_state.user_profile
     if profile["logged_in"]:
-        st.markdown(f"<div style='text-align: right;'><span style='font-size: 13px; background-color: rgba(24, 24, 27, 0.85); border: 1px solid rgba(255, 255, 255, 0.2); padding: 6px 14px; border-radius: 20px; color: #ffffff;'>👤 {profile['name']}</span></div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='text-align: right;'><span style='font-size: 13px; background-color: #1F2023; border: 1px solid #444444; padding: 6px 14px; border-radius: 20px; color: #ffffff;'>👤 {profile['name']}</span></div>", unsafe_allow_html=True)
     else:
         if st.button("Sign In / Visitor Mode", key="top_signin"):
             st.session_state.user_profile["logged_in"] = True
@@ -350,18 +374,47 @@ if current_session["pdfs"]:
         pills_html += f'<span class="doc-pill">📄 {doc_name}</span>'
     st.markdown(f"<div style='margin-bottom: 15px;'>{pills_html}</div>", unsafe_allow_html=True)
 
-# Centered Hero View over Edge-to-Edge Mesh Canvas (if no messages yet)
+# Mode Selector Row
+col_m1, col_m2, col_m3, col_m4 = st.columns(4)
+with col_m1:
+    if st.button("🌐 Web Search", use_container_width=True):
+        st.session_state.active_mode = "search" if st.session_state.active_mode != "search" else "standard"
+        st.rerun()
+with col_m2:
+    if st.button("🧠 Think Deeply", use_container_width=True):
+        st.session_state.active_mode = "think" if st.session_state.active_mode != "think" else "standard"
+        st.rerun()
+with col_m3:
+    if st.button("📁 Canvas Mode", use_container_width=True):
+        st.session_state.active_mode = "canvas" if st.session_state.active_mode != "canvas" else "standard"
+        st.rerun()
+with col_m4:
+    if st.button("🎙️ Voice Note", use_container_width=True):
+        st.session_state.active_mode = "voice" if st.session_state.active_mode != "voice" else "standard"
+        st.rerun()
+
+# Centered Hero View over Exact Radial Gradient Canvas (if no messages yet)
 if len(current_session["messages"]) == 0:
-    st.markdown("""
-    <div class="hero-glass-card">
+    mode_desc = "Standard Mode"
+    if st.session_state.active_mode == "search":
+        mode_desc = "🌐 Web Search Mode Active"
+    elif st.session_state.active_mode == "think":
+        mode_desc = "🧠 Think Deeply Mode Active"
+    elif st.session_state.active_mode == "canvas":
+        mode_desc = "📁 Canvas Creation Mode Active"
+    elif st.session_state.active_mode == "voice":
+        mode_desc = "🎙️ Voice Recording Mode Active"
+
+    st.markdown(f"""
+    <div class="prompt-box-card">
         <div class="hero-title">Type your message here...</div>
-        <div class="hero-subhead">Attach any PDF, Word, Excel, CSV, or Text document above and start asking questions instantly.</div>
-        <div style="display: flex; justify-content: center; gap: 20px; margin-top: 24px; color: #ffffff; font-size: 22px;">
+        <div class="hero-subhead">Attach any PDF, Word, Excel, CSV, or Text document above. ({mode_desc})</div>
+        <div style="display: flex; justify-content: center; gap: 20px; color: #ffffff; font-size: 22px;">
             <span title="Attach Document">📎</span>
             <span title="Web Search">🌐</span>
-            <span title="Settings">⚙️</span>
-            <span title="Files">📁</span>
-            <span title="Voice">🎙️</span>
+            <span title="Think Deeply">🧠</span>
+            <span title="Canvas Mode">📁</span>
+            <span title="Voice Note">🎙️</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -378,20 +431,32 @@ for message in current_session["messages"]:
                     st.markdown(f"**Source {idx+1}:** `📄 {doc_name}` — *Page {page_num}*")
                     st.markdown(f'<div class="citation-box">{src["text"]}</div>', unsafe_allow_html=True)
 
-# Fixed Floating Prompt Input Pill
-prompt = st.chat_input("Type your message here...")
+# Fixed Floating Prompt Input Box
+placeholder_text = "Type your message here..."
+if st.session_state.active_mode == "search":
+    placeholder_text = "Search the web..."
+elif st.session_state.active_mode == "think":
+    placeholder_text = "Think deeply..."
+elif st.session_state.active_mode == "canvas":
+    placeholder_text = "Create on canvas..."
+
+prompt = st.chat_input(placeholder_text)
 
 if prompt:
+    formatted_prompt = prompt
+    if st.session_state.active_mode != "standard":
+        formatted_prompt = f"[{st.session_state.active_mode.capitalize()} Mode] {prompt}"
+
     with st.chat_message("user"):
-        st.markdown(prompt)
-    current_session["messages"].append({"role": "user", "content": prompt})
+        st.markdown(formatted_prompt)
+    current_session["messages"].append({"role": "user", "content": formatted_prompt})
 
     with st.chat_message("assistant"):
         message_placeholder = st.empty()
         with st.spinner("Analyzing document context..."):
             try:
                 response_text, sources = st.session_state.rag_engine.query_with_context(
-                    query=prompt,
+                    query=formatted_prompt,
                     chat_history=current_session["messages"][:-1]
                 )
                 message_placeholder.markdown(response_text)

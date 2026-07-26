@@ -88,8 +88,25 @@ class RAGEngine:
                 
         return chunks
 
+    def _local_embedding(self, text):
+        """Instant zero-dependency 384-dimensional term vectorizer for keyless execution."""
+        if isinstance(text, list):
+            return [self._local_embedding(t) for t in text]
+            
+        import numpy as np
+        vec = np.zeros(384, dtype=np.float32)
+        words = re.findall(r'\w+', str(text).lower())
+        if words:
+            for word in words:
+                idx = abs(hash(word)) % 384
+                vec[idx] += 1.0
+            norm = np.linalg.norm(vec)
+            if norm > 0:
+                vec = vec / norm
+        return vec.tolist()
+
     def get_embedding(self, text):
-        """Generate vector embeddings via Gemini API if available, otherwise use local ChromaDB ONNX model."""
+        """Generate vector embeddings via Gemini API if available, otherwise use instant local vectorizer."""
         key = self.api_key or os.environ.get("GEMINI_API_KEY")
         if key:
             if not self.client:
@@ -114,10 +131,8 @@ class RAGEngine:
                     except Exception:
                         continue
 
-        # Fallback to 100% local ONNX embedding model (all-MiniLM-L6-v2)
-        contents = text if isinstance(text, list) else [text]
-        local_embeddings = self.default_ef(contents)
-        return local_embeddings if isinstance(text, list) else local_embeddings[0]
+        # Instant local vectorizer fallback if no key is configured or API call fails
+        return self._local_embedding(text)
 
     def add_document(self, file_name, file_path, chunk_size=800, chunk_overlap=150):
         """Extract text, chunk, embed, and store document in ChromaDB."""

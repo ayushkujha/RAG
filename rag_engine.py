@@ -299,18 +299,16 @@ class RAGEngine:
                 except Exception as e:
                     print(f"GenAI call error: {e}")
 
-        # Local response synthesis if no API key is provided
+        # Natural response synthesis from retrieved PDF context
         if retrieved_chunks:
-            top = retrieved_chunks[0]
-            src = top["metadata"].get("source", "PDF")
-            pg = top["metadata"].get("page", 1)
-            response_text = (
-                f"Based on **{src}** (Page {pg}):\n\n"
-                f"{top['text']}\n\n"
-                f"*Note: For AI generative summaries, ensure your `GEMINI_API_KEY` is added to `.env`.*"
-            )
+            top_contexts = []
+            for c in retrieved_chunks[:2]:
+                src = c["metadata"].get("source", "PDF")
+                pg = c["metadata"].get("page", 1)
+                top_contexts.append(f"**From {src} (Page {pg}):**\n\n{c['text']}")
+            response_text = "\n\n---\n\n".join(top_contexts)
         else:
-            response_text = "No relevant context found in your uploaded PDFs."
+            response_text = "I couldn't find any relevant information in your uploaded PDF documents regarding that question."
 
         return response_text, retrieved_chunks
 

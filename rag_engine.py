@@ -2,6 +2,7 @@ import os
 import re
 import fitz  # PyMuPDF
 import chromadb
+from chromadb.utils import embedding_functions
 from dotenv import load_dotenv
 from pypdf import PdfReader
 from google import genai
@@ -15,11 +16,16 @@ class RAGEngine:
         self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
         self.client = None
         if self.api_key:
-            self.client = genai.Client(api_key=self.api_key)
+            try:
+                self.client = genai.Client(api_key=self.api_key)
+            except Exception:
+                self.client = None
             
-        # Initialize persistent ChromaDB Vector Store
+        # Initialize persistent ChromaDB Vector Store with local default embedding function
         self.db_path = db_path
         self.chroma_client = chromadb.PersistentClient(path=self.db_path)
+        self.default_ef = embedding_functions.DefaultEmbeddingFunction()
+        
         self.collection = self.chroma_client.get_or_create_collection(
             name="pdf_documents",
             metadata={"hnsw:space": "cosine"}
@@ -30,7 +36,10 @@ class RAGEngine:
         self.api_key = api_key
         if api_key:
             os.environ["GEMINI_API_KEY"] = api_key
-            self.client = genai.Client(api_key=api_key)
+            try:
+                self.client = genai.Client(api_key=api_key)
+            except Exception:
+                self.client = None
 
     def extract_text_from_pdf(self, file_path):
         """Extract text from PDF page by page using PyMuPDF (fitz), fallback to pypdf."""
@@ -42,13 +51,15 @@ class RAGEngine:
                 if text and text.strip():
                     pages_content.append({"text": text, "page": idx + 1})
             doc.close()
-        except Exception as e:
-            # Fallback to PyPDF if PyMuPDF encounters an issue
-            reader = PdfReader(file_path)
-            for idx, page in enumerate(reader.pages):
-                text = page.extract_text()
-                if text and text.strip():
-                    pages_content.append({"text": text, "page": idx + 1})
+        except Exception:
+            try:
+                reader = PdfReader(file_path)
+                for idx, page in enumerate(reader.pages):
+                    text = page.extract_text()
+                    if text and text.strip():
+                        pages_content.append({"text": text, "page": idx + 1})
+            except Exception:
+                pass
                     
         return pages_content
 
@@ -78,42 +89,40 @@ class RAGEngine:
         return chunks
 
     def get_embedding(self, text):
-        """Generate vector embedding using Google GenAI SDK."""
-        if not self.client:
-            # Attempt to re-initialize client from environment variable
-            env_key = os.environ.get("GEMINI_API_KEY")
-            if env_key:
-                self.client = genai.Client(api_key=env_key)
-            else:
-                raise ValueError("Gemini API key is not configured. Please set the GEMINI_API_KEY environment variable.")
-                
-        embedding_models = ["gemini-embedding-001", "gemini-embedding-2", "gemini-embedding-2-preview"]
-        last_err = None
-        
-        # If input is a list of texts vs single string
+        """Generate vector embeddings via Gemini API if available, otherwise use local ChromaDB ONNX model."""
+        key = self.api_key or os.environ.get("GEMINI_API_KEY")
+        if key:
+            if not self.client:
+                try:
+                    self.client = genai.Client(api_key=key)
+                except Exception:
+                    self.client = None
+
+            if self.client:
+                embedding_models = ["gemini-embedding-001", "gemini-embedding-2", "gemini-embedding-2-preview"]
+                contents = text if isinstance(text, list) else [text]
+                for model_name in embedding_models:
+                    try:
+                        response = self.client.models.embed_content(
+                            model=model_name,
+                            contents=contents
+                        )
+                        if response.embeddings:
+                            return [emb.values for emb in response.embeddings] if isinstance(text, list) else response.embeddings[0].values
+                        elif hasattr(response, 'embedding') and response.embedding:
+                            return [emb.values for emb in response.embedding] if isinstance(text, list) else response.embedding.values
+                    except Exception:
+                        continue
+
+        # Fallback to 100% local ONNX embedding model (all-MiniLM-L6-v2)
         contents = text if isinstance(text, list) else [text]
-        
-        for model_name in embedding_models:
-            try:
-                response = self.client.models.embed_content(
-                    model=model_name,
-                    contents=contents
-                )
-                if response.embeddings:
-                    return [emb.values for emb in response.embeddings] if isinstance(text, list) else response.embeddings[0].values
-                elif hasattr(response, 'embedding') and response.embedding:
-                    return [emb.values for emb in response.embedding] if isinstance(text, list) else response.embedding.values
-            except Exception as e:
-                last_err = e
-                continue
-                
-        raise Exception(f"Failed to generate embeddings: {last_err}")
+        local_embeddings = self.default_ef(contents)
+        return local_embeddings if isinstance(text, list) else local_embeddings[0]
 
     def add_document(self, file_name, file_path, chunk_size=800, chunk_overlap=150):
         """Extract text, chunk, embed, and store document in ChromaDB."""
         text_blocks = self.extract_text_from_pdf(file_path)
         if not text_blocks:
-            # Fallback for plain text files if uploaded
             with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
                 content = f.read()
             text_blocks = [{"text": content, "page": 1}]
@@ -204,7 +213,6 @@ class RAGEngine:
             distances = results["distances"][0] if "distances" in results and results["distances"] else [0]*len(docs)
             
             for doc_text, meta, dist in zip(docs, metas, distances):
-                # Convert cosine distance to similarity score
                 similarity = 1.0 - dist if dist <= 1.0 else (1.0 / (1.0 + dist))
                 chunks.append({
                     "text": doc_text,
@@ -215,7 +223,7 @@ class RAGEngine:
         return chunks
 
     def query_with_context(self, query, chat_history=None, top_k=4):
-        """Retrieve context from ChromaDB and generate an answer using Gemini."""
+        """Retrieve context from ChromaDB and generate an answer using Gemini or local context synthesis."""
         retrieved_chunks = self.retrieve(query, top_k=top_k)
         
         if retrieved_chunks:
@@ -228,52 +236,71 @@ class RAGEngine:
         else:
             context_str = "No relevant document chunks found in database."
 
-        system_instruction = (
-            "You are an AI Study & Research Assistant. You help users understand and chat about their uploaded PDF documents.\n"
-            "Answer questions accurately based ONLY on the provided document context snippets.\n"
-            "If the context does not contain enough information to answer the question, state politely that the uploaded documents do not contain that information.\n"
-            "Always cite the relevant document name and page number when answering."
-        )
+        key = self.api_key or os.environ.get("GEMINI_API_KEY")
+        if key:
+            if not self.client:
+                try:
+                    self.client = genai.Client(api_key=key)
+                except Exception:
+                    self.client = None
 
-        current_prompt = (
-            f"Context from uploaded PDF documents:\n{context_str}\n\n"
-            f"User Question: {query}"
-        )
+            if self.client:
+                system_instruction = (
+                    "You are an AI Study & Research Assistant. You help users understand and chat about their uploaded PDF documents.\n"
+                    "Answer questions accurately based ONLY on the provided document context snippets.\n"
+                    "If the context does not contain enough information to answer the question, state politely that the uploaded documents do not contain that information.\n"
+                    "Always cite the relevant document name and page number when answering."
+                )
 
-        messages = []
-        if chat_history:
-            for msg in chat_history:
-                role = "user" if msg["role"] == "user" else "model"
+                current_prompt = (
+                    f"Context from uploaded PDF documents:\n{context_str}\n\n"
+                    f"User Question: {query}"
+                )
+
+                messages = []
+                if chat_history:
+                    for msg in chat_history:
+                        role = "user" if msg["role"] == "user" else "model"
+                        messages.append(types.Content(
+                            role=role,
+                            parts=[types.Part.from_text(text=msg["content"])]
+                        ))
+                        
                 messages.append(types.Content(
-                    role=role,
-                    parts=[types.Part.from_text(text=msg["content"])]
+                    role="user",
+                    parts=[types.Part.from_text(text=current_prompt)]
                 ))
-                
-        messages.append(types.Content(
-            role="user",
-            parts=[types.Part.from_text(text=current_prompt)]
-        ))
 
-        if not self.client:
-            env_key = os.environ.get("GEMINI_API_KEY")
-            if env_key:
-                self.client = genai.Client(api_key=env_key)
-            else:
-                raise ValueError("Gemini API key is not configured. Please set GEMINI_API_KEY environment variable.")
+                try:
+                    response = self.client.models.generate_content(
+                        model="gemini-2.5-flash",
+                        contents=messages,
+                        config=types.GenerateContentConfig(
+                            system_instruction=system_instruction,
+                            temperature=0.2,
+                        )
+                    )
+                    return response.text, retrieved_chunks
+                except Exception as e:
+                    print(f"GenAI call error: {e}")
 
-        response = self.client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=messages,
-            config=types.GenerateContentConfig(
-                system_instruction=system_instruction,
-                temperature=0.2,
+        # Local response synthesis if no API key is provided
+        if retrieved_chunks:
+            top = retrieved_chunks[0]
+            src = top["metadata"].get("source", "PDF")
+            pg = top["metadata"].get("page", 1)
+            response_text = (
+                f"Based on **{src}** (Page {pg}):\n\n"
+                f"{top['text']}\n\n"
+                f"*Note: For AI generative summaries, ensure your `GEMINI_API_KEY` is added to `.env`.*"
             )
-        )
+        else:
+            response_text = "No relevant context found in your uploaded PDFs."
 
-        return response.text, retrieved_chunks
+        return response_text, retrieved_chunks
 
     def generate_suggested_questions(self):
-        """Generate 3 tailored questions based on indexed document snippets."""
+        """Generate 3 study questions based on indexed document snippets."""
         if self.collection.count() == 0:
             return []
             
@@ -281,28 +308,31 @@ class RAGEngine:
         docs = data.get("documents", [])
         if not docs:
             return []
-            
-        context_preview = "\n\n".join(docs[:3])
-        prompt = (
-            "Based on these PDF document snippets, generate 3 clear, interesting, and specific questions a user could ask to study this content.\n"
-            "Return ONLY the 3 questions as a plain list, one question per line, with no bullet points or extra text.\n\n"
-            f"Snippets:\n{context_preview}"
-        )
-        
-        try:
+
+        key = self.api_key or os.environ.get("GEMINI_API_KEY")
+        if key:
             if not self.client:
-                env_key = os.environ.get("GEMINI_API_KEY")
-                if env_key:
-                    self.client = genai.Client(api_key=env_key)
-                else:
-                    return []
-                    
-            response = self.client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=prompt,
-                config=types.GenerateContentConfig(temperature=0.7)
-            )
-            questions = [q.strip().lstrip("0123456789.-*• ").strip() for q in response.text.split("\n") if q.strip()]
-            return questions[:3]
-        except Exception:
-            return ["Summarize the main points of this PDF.", "What are the key concepts explained here?", "What conclusions does this document reach?"]
+                try:
+                    self.client = genai.Client(api_key=key)
+                except Exception:
+                    self.client = None
+
+            if self.client:
+                context_preview = "\n\n".join(docs[:3])
+                prompt = (
+                    "Based on these PDF document snippets, generate 3 clear, interesting, and specific questions a user could ask to study this content.\n"
+                    "Return ONLY the 3 questions as a plain list, one question per line, with no bullet points or extra text.\n\n"
+                    f"Snippets:\n{context_preview}"
+                )
+                try:
+                    response = self.client.models.generate_content(
+                        model="gemini-2.5-flash",
+                        contents=prompt,
+                        config=types.GenerateContentConfig(temperature=0.7)
+                    )
+                    questions = [q.strip().lstrip("0123456789.-*• ").strip() for q in response.text.split("\n") if q.strip()]
+                    return questions[:3]
+                except Exception:
+                    pass
+
+        return ["Summarize the main points of this PDF.", "What are the key concepts explained here?", "What conclusions does this document reach?"]
